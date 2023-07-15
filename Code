@@ -1,0 +1,64 @@
+import homeassistant.helpers.config_entry as config_entry
+import homeassistant.helpers.discovery as discovery
+from homeassistant.core import HomeAssistant
+from homeassistant.components.sensor import Sensor
+
+# This is the configuration entry for the add-on.
+class SSD1306I2CSensorConfigEntry(config_entry.ConfigEntry):
+    """Configuration entry for the SSD1306 I2C sensor add-on."""
+
+    def __init__(self, domain, data):
+        super().__init__(domain, data)
+
+        self._name = data.get("name")
+        self._i2c_bus = data.get("i2c_bus")
+        self._address = data.get("address")
+        self._width = data.get("width")
+        self._height = data.get("height")
+
+        # Create the sensor.
+        self.sensor = Sensor(
+            self.hass,
+            self._name,
+            "SSD1306 I2C Sensor",
+            icon="mdi:led-strip",
+            unit_of_measurement="px",
+        )
+
+    async def async_setup(self, hass: HomeAssistant):
+        """Set up the add-on."""
+        # Register the sensor with Home Assistant.
+        await self.sensor.async_register()
+
+        # Add the sensor to the discovery platform.
+        discovery.async_add_entities([self.sensor])
+
+        return True
+
+# This is the sensor class for the add-on.
+class SSD1306I2CSensor(Sensor):
+    """A sensor for the SSD1306 I2C display."""
+
+    def __init__(self, hass: HomeAssistant, name: str, entity_id: str, icon: str, unit_of_measurement: str):
+        super().__init__(hass, name, entity_id, icon, unit_of_measurement)
+
+        # Initialize the display.
+        self.display = SSD1306_I2C(hass, self._i2c_bus, self._address, self._width, self._height)
+
+    def update(self):
+        """Update the sensor."""
+        # Clear the display.
+        self.display.clear()
+
+        # Write the current time to the display.
+        self.display.write_time()
+
+        # Write the current temperature to the display.
+        self.display.write_temperature()
+
+        # Write the current humidity to the display.
+        self.display.write_humidity()
+
+        # Display the data on the display.
+        self.display.display()
+
